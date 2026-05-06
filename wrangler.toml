@@ -1,7 +1,6 @@
 name = "my-deepseek-tui"
 main = "worker/index.js"
 compatibility_date = "2026-05-06"
-pages_build_output_dir = "./dist"
 
 [vars]
 CREEM_API_BASE = "https://api.creem.io"
