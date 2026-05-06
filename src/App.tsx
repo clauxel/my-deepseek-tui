@@ -153,6 +153,42 @@ async function createCheckoutSession(planId: PlanId, billing: Billing) {
   return payload.checkoutUrl
 }
 
+function openCenteredCheckoutWindow() {
+  const width = 560
+  const height = 760
+  const left = Math.max(0, Math.round(window.screenX + (window.outerWidth - width) / 2))
+  const top = Math.max(0, Math.round(window.screenY + (window.outerHeight - height) / 2))
+  const popup = window.open(
+    '',
+    'deepseek-tui-checkout',
+    `popup=yes,width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`,
+  )
+
+  if (popup) {
+    try {
+      popup.document.title = 'Opening secure checkout'
+      popup.document.body.innerHTML =
+        '<main style="min-height:100vh;display:grid;place-items:center;background:#10151f;color:#eef4ff;font-family:ui-sans-serif,system-ui,sans-serif;text-align:center;padding:32px"><div><h1 style="font-size:22px;margin:0 0 8px">Opening secure checkout...</h1><p style="margin:0;color:#aeb9c8">Your DeepSeek-TUI Cloud payment window is being prepared.</p></div></main>'
+    } catch {
+      /* Existing named checkout windows can be cross-origin; setting location below still works. */
+    }
+  }
+
+  return popup
+}
+
+function sendPopupToCheckout(popup: Window | null, url: string) {
+  if (!popup || popup.closed) return false
+
+  try {
+    popup.location.href = url
+    popup.focus()
+    return true
+  } catch {
+    return false
+  }
+}
+
 function usePathnameSignal() {
   const [pathname, setPathname] = useState(() => window.location.pathname)
   const [search, setSearch] = useState(() => window.location.search)
@@ -288,26 +324,25 @@ export default function App() {
     setCheckoutLoadingKey(loadingKey)
     setCheckoutModal({ planId, billing: nextBilling, loadingKey, status: 'starting' })
 
+    const popup = openCenteredCheckoutWindow()
+
     try {
       const url = await createCheckoutSession(planId, nextBilling)
       setCheckoutModal({ planId, billing: nextBilling, loadingKey, status: 'redirecting', checkoutUrl: url })
       window.setTimeout(() => {
-        const width = 560
-        const height = 760
-        const left = Math.max(0, Math.round(window.screenX + (window.outerWidth - width) / 2))
-        const top = Math.max(0, Math.round(window.screenY + (window.outerHeight - height) / 2))
-        const popup = window.open(
-          url,
-          'deepseek-tui-checkout',
-          `popup=yes,width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`,
-        )
-        if (!popup) {
+        if (sendPopupToCheckout(popup, url)) return
+
+        const fallbackPopup = openCenteredCheckoutWindow()
+        if (!sendPopupToCheckout(fallbackPopup, url)) {
           window.location.assign(url)
-          return
         }
-        popup.focus()
-      }, 380)
+      }, 180)
     } catch {
+      try {
+        if (popup && !popup.closed) popup.close()
+      } catch {
+        /* Nothing to clean up if the browser blocks access to the popup. */
+      }
       setCheckoutModal({ planId, billing: nextBilling, loadingKey, status: 'retry' })
     } finally {
       setCheckoutLoadingKey(null)

@@ -33,6 +33,8 @@
 !src/lib/
 !src/lib/routing.ts
 !src/lib/seo.ts
+!scripts/
+!scripts/postbuild.mjs
 
 # Cloudflare Worker.
 !worker/

@@ -49,6 +49,8 @@ const indexablePaths = [
   '/terms',
 ]
 
+const staticAssetPaths = new Set([...indexablePaths, '/checkout/done'])
+
 function securityHeaders() {
   return new Headers({
     'X-Content-Type-Options': 'nosniff',
@@ -293,6 +295,16 @@ Sitemap: ${CANONICAL_ORIGIN}/sitemap.xml
 
 async function fetchAsset(request, env) {
   if (env?.ASSETS?.fetch) {
+    const requestUrl = new URL(request.url)
+    const normalizedPath = requestUrl.pathname.replace(/\/+$/, '') || '/'
+
+    if (staticAssetPaths.has(normalizedPath)) {
+      const assetUrl = new URL(request.url)
+      assetUrl.pathname = normalizedPath === '/' ? '/index.html' : `${normalizedPath}/index.html`
+      const assetResponse = await env.ASSETS.fetch(new Request(assetUrl.toString(), request))
+      if (assetResponse.status !== 404) return assetResponse
+    }
+
     return env.ASSETS.fetch(request)
   }
 
