@@ -35,6 +35,8 @@
 !src/lib/seo.ts
 !scripts/
 !scripts/postbuild.mjs
+!functions/
+!functions/**
 
 # Cloudflare Worker.
 !worker/

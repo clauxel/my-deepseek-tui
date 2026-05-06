@@ -75,6 +75,18 @@ function maybeRedirectToCanonical(requestUrl) {
   return null
 }
 
+function resolvePublicAppOrigin(requestUrl) {
+  if (requestUrl.hostname === CANONICAL_HOST || LEGACY_HOSTS.has(requestUrl.hostname)) {
+    return CANONICAL_ORIGIN
+  }
+
+  if (requestUrl.hostname.endsWith('.pages.dev') || requestUrl.hostname.endsWith('.workers.dev')) {
+    return requestUrl.origin
+  }
+
+  return CANONICAL_ORIGIN
+}
+
 function resolveCreemBase(env) {
   const raw = String(env?.CREEM_API_BASE ?? '').trim()
   return raw ? raw.replace(/\/+$/, '') : 'https://api.creem.io'
@@ -163,7 +175,7 @@ async function requestCreemJson(apiKey, url, body) {
   return payload || {}
 }
 
-async function getOrCreateCreemProduct(env, apiKey, plan, billing) {
+async function getOrCreateCreemProduct(env, apiKey, plan, billing, successUrl) {
   const configuredProductId = resolveConfiguredProductId(env, plan.id, billing)
   if (configuredProductId) return configuredProductId
 
@@ -183,7 +195,7 @@ async function getOrCreateCreemProduct(env, apiKey, plan, billing) {
     billing_type: 'onetime',
     tax_mode: 'inclusive',
     tax_category: 'saas',
-    default_success_url: `${CANONICAL_ORIGIN}/checkout/done`,
+    default_success_url: successUrl,
   })
 
   const productId = product.id || product.product_id
@@ -201,7 +213,7 @@ function extractCheckoutUrl(payload) {
   return ''
 }
 
-async function handleCheckout(request, env) {
+async function handleCheckout(request, env, requestUrl) {
   if (request.method !== 'POST') {
     return jsonResponse({ ok: false, error: 'Method not allowed.' }, 405)
   }
@@ -221,13 +233,14 @@ async function handleCheckout(request, env) {
   const planId = typeof body?.planId === 'string' ? body.planId : 'pro'
   const billing = body?.billing === 'monthly' ? 'monthly' : 'annual'
   const plan = planCatalog[planId] || planCatalog.pro
+  const successUrl = `${resolvePublicAppOrigin(requestUrl)}/checkout/done`
 
   try {
-    const productId = await getOrCreateCreemProduct(env, apiKey, plan, billing)
+    const productId = await getOrCreateCreemProduct(env, apiKey, plan, billing, successUrl)
     const checkout = await requestCreemJson(apiKey, `${resolveCreemBase(env)}/v1/checkouts`, {
       product_id: productId,
       units: 1,
-      success_url: `${CANONICAL_ORIGIN}/checkout/done`,
+      success_url: successUrl,
       request_id: `deepseek_tui_${Date.now()}_${Math.random().toString(16).slice(2)}`,
       metadata: {
         site: 'deepseek-tui.space',
@@ -243,10 +256,10 @@ async function handleCheckout(request, env) {
   }
 }
 
-function handleRuntime() {
+function handleRuntime(requestUrl) {
   return jsonResponse({
     ok: true,
-    publicAppOrigin: CANONICAL_ORIGIN,
+    publicAppOrigin: resolvePublicAppOrigin(requestUrl),
     deployment: 'cloudflare-workers-assets',
     ts: Date.now(),
   })
@@ -319,8 +332,8 @@ export async function handleRequest(request, env) {
   const redirect = maybeRedirectToCanonical(requestUrl)
   if (redirect) return redirect
 
-  if (requestUrl.pathname === '/api/runtime') return handleRuntime()
-  if (requestUrl.pathname === '/api/checkout') return handleCheckout(request, env)
+  if (requestUrl.pathname === '/api/runtime') return handleRuntime(requestUrl)
+  if (requestUrl.pathname === '/api/checkout') return handleCheckout(request, env, requestUrl)
   if (requestUrl.pathname === '/sitemap.xml') return handleSitemap()
   if (requestUrl.pathname === '/robots.txt') return handleRobots()
 

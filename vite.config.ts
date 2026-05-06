@@ -7,5 +7,12 @@ export default defineConfig({
     hmr: {
       port: 24687,
     },
+    proxy: {
+      '/api': {
+        target: 'https://my-deepseek-tui.yangdengkui01.workers.dev',
+        changeOrigin: true,
+        secure: true,
+      },
+    },
   },
 })

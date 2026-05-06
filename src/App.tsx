@@ -44,7 +44,7 @@ type CheckoutModalState = {
   planId: PlanId
   billing: Billing
   loadingKey: string
-  status: 'starting' | 'redirecting' | 'retry'
+  status: 'loading' | 'popup' | 'retry'
   checkoutUrl?: string
 }
 
@@ -159,7 +159,7 @@ function openCenteredCheckoutWindow() {
   const left = Math.max(0, Math.round(window.screenX + (window.outerWidth - width) / 2))
   const top = Math.max(0, Math.round(window.screenY + (window.outerHeight - height) / 2))
   const popup = window.open(
-    '',
+    'about:blank',
     'deepseek-tui-checkout',
     `popup=yes,width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`,
   )
@@ -181,7 +181,7 @@ function sendPopupToCheckout(popup: Window | null, url: string) {
   if (!popup || popup.closed) return false
 
   try {
-    popup.location.href = url
+    popup.location.replace(url)
     popup.focus()
     return true
   } catch {
@@ -322,21 +322,14 @@ export default function App() {
     setSelectedPlanId(planId)
     setBilling(nextBilling)
     setCheckoutLoadingKey(loadingKey)
-    setCheckoutModal({ planId, billing: nextBilling, loadingKey, status: 'starting' })
+    setCheckoutModal({ planId, billing: nextBilling, loadingKey, status: 'loading' })
 
     const popup = openCenteredCheckoutWindow()
 
     try {
       const url = await createCheckoutSession(planId, nextBilling)
-      setCheckoutModal({ planId, billing: nextBilling, loadingKey, status: 'redirecting', checkoutUrl: url })
-      window.setTimeout(() => {
-        if (sendPopupToCheckout(popup, url)) return
-
-        const fallbackPopup = openCenteredCheckoutWindow()
-        if (!sendPopupToCheckout(fallbackPopup, url)) {
-          window.location.assign(url)
-        }
-      }, 180)
+      sendPopupToCheckout(popup, url)
+      setCheckoutModal({ planId, billing: nextBilling, loadingKey, status: 'popup', checkoutUrl: url })
     } catch {
       try {
         if (popup && !popup.closed) popup.close()
@@ -411,66 +404,46 @@ export default function App() {
   const renderCheckoutModal = () => {
     if (!checkoutModal) return null
 
-    const selectedPlan = plans.find((plan) => plan.id === checkoutModal.planId) ?? plans[1]
-    const monthly = checkoutModal.billing === 'annual' ? selectedPlan.monthlyUsd * 0.5 : selectedPlan.monthlyUsd
-    const total =
-      checkoutModal.billing === 'annual'
-        ? `${formatMoney(monthly * 12)} billed today`
-        : `${formatMoney(monthly)} billed today`
-    const canClose = checkoutModal.status !== 'redirecting'
-    const statusCopy =
-      checkoutModal.status === 'retry'
-        ? "The secure checkout did not open. Your selected plan is still ready, so retrying won't change the price."
-        : checkoutModal.status === 'redirecting'
-          ? 'Secure checkout is opening in a centered payment window. After payment, you return to the homepage.'
-          : 'Preparing your hosted Creem checkout with Pro annual selected by default.'
+    const checkoutUrl = checkoutModal.status === 'popup' ? checkoutModal.checkoutUrl : undefined
 
     return (
       <div className="dst-checkout-backdrop" role="presentation">
-        <section className="dst-checkout-modal" role="dialog" aria-modal="true" aria-labelledby="checkout-title">
-          {canClose ? (
-            <button type="button" className="dst-checkout-close" aria-label="Close checkout" onClick={() => setCheckoutModal(null)}>
-              <X size={18} />
-            </button>
-          ) : null}
-          <p className="dst-eyebrow">Secure checkout</p>
-          <h2 id="checkout-title">
-            {selectedPlan.name} {checkoutModal.billing === 'annual' ? 'annual' : 'monthly'} is ready.
-          </h2>
-          <p className="dst-muted">{statusCopy}</p>
-          <div className="dst-checkout-price">
-            <span>
-              {formatMoney(monthly)}
-              <small>/mo</small>
-            </span>
-            <strong>{total}</strong>
-          </div>
-          <div className="dst-checkout-proof">
-            <CheckCircle2 size={18} />
-            <span>Annual billing saves 50%. Pro is the recommended starting plan for persistent logs and private workspaces.</span>
-          </div>
-          <ul className="dst-checkout-list">
-            <li>Hosted DeepSeek-TUI workspace onboarding.</li>
-            <li>Browser terminal, remote runner guidance, and session continuity.</li>
-            <li>Payment completes on Creem and returns to the homepage after success.</li>
-          </ul>
-          {checkoutModal.status === 'retry' ? (
-            <div className="dst-checkout-actions">
-              <button
-                type="button"
-                className="dst-btn dst-btn-primary"
-                onClick={() => void startHostedCheckout(checkoutModal.planId, checkoutModal.billing, checkoutModal.loadingKey)}
-              >
-                Try secure checkout again
-              </button>
-              <button type="button" className="dst-btn dst-btn-ghost" onClick={() => setCheckoutModal(null)}>
-                Review plans
-              </button>
+        <section className="dst-checkout-modal dst-creem-popup-modal" role="dialog" aria-modal="true" aria-labelledby="checkout-title">
+          <button type="button" className="dst-checkout-close" aria-label="Close checkout" onClick={() => setCheckoutModal(null)}>
+            <X size={18} />
+          </button>
+          {checkoutUrl ? (
+            <div className="dst-creem-popup-copy">
+              <p className="dst-eyebrow">Secure checkout</p>
+              <h2 id="checkout-title">Creem checkout opened.</h2>
+              <p className="dst-muted">
+                Complete payment in the Creem window. This page stays open and returns to the homepage after success.
+              </p>
+              <a className="dst-btn dst-btn-primary" href={checkoutUrl} target="_blank" rel="noreferrer noopener">
+                Reopen Creem checkout
+              </a>
+            </div>
+          ) : checkoutModal.status === 'loading' ? (
+            <div className="dst-creem-loading" aria-live="polite">
+              <span />
+              Opening Creem checkout...
             </div>
           ) : (
-            <div className="dst-checkout-progress" aria-live="polite">
-              <span />
-              {checkoutModal.status === 'redirecting' ? 'Opening hosted checkout...' : 'Creating checkout...'}
+            <div className="dst-creem-error">
+              <p>Creem checkout could not be opened. Please try again.</p>
+              <div className="dst-checkout-actions">
+                <button
+                  type="button"
+                  className="dst-btn dst-btn-primary"
+                  onClick={() => void startHostedCheckout(checkoutModal.planId, checkoutModal.billing, checkoutModal.loadingKey)}
+                  disabled={checkoutLoadingKey !== null}
+                >
+                  Open Creem checkout
+                </button>
+                <button type="button" className="dst-btn dst-btn-ghost" onClick={() => setCheckoutModal(null)}>
+                  Review plans
+                </button>
+              </div>
             </div>
           )}
         </section>
