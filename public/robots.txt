@@ -3,3 +3,4 @@ Allow: /
 Disallow: /api/
 Disallow: /checkout/done
 Sitemap: https://deepseek-tui.space/sitemap.xml
+Allow: /llms.txt

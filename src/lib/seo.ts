@@ -1,10 +1,10 @@
 import type { KeywordPage } from '../content/keyword-pages'
 import type { RouteView } from './routing'
 
-const siteName = 'DeepSeek-TUI Cloud'
-const defaultTitle = 'DeepSeek-TUI Cloud | Terminal Coding Agent for DeepSeek V4'
+const siteName = 'DeepSeek TUI Cloud'
+const defaultTitle = 'DeepSeek TUI Cloud - Hosted DeepSeek-TUI Workspace for DeepSeek V4'
 const defaultDescription =
-  'Run DeepSeek-TUI as a polished hosted workspace: DeepSeek V4 auto routing, approvals, rollback, sessions, MCP, HTTP/SSE, and cost visibility for serious coding work.'
+  'Run DeepSeek TUI as a hosted DeepSeek-TUI workspace with DeepSeek V4 routing, approvals, rollback, sessions, MCP, HTTP/SSE, and cost visibility for coding work.'
 
 const canonicalLinkId = 'deepseek-tui-canonical-link'
 const structuredDataScriptId = 'deepseek-tui-structured-data'

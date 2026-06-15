@@ -18,11 +18,15 @@ function maybeRedirectToCanonical(request) {
 }
 
 export function onRequest(context) {
+  const url = new URL(context.request.url)
+  if (url.pathname.startsWith('/api/')) {
+    return handleRequest(context.request, context.env)
+  }
+
   const redirect = maybeRedirectToCanonical(context.request)
   if (redirect) return redirect
 
-  const url = new URL(context.request.url)
-  if (url.pathname.startsWith('/api/') || url.pathname === '/sitemap.xml' || url.pathname === '/robots.txt') {
+  if (url.pathname === '/sitemap.xml' || url.pathname === '/robots.txt') {
     return handleRequest(context.request, context.env)
   }
 

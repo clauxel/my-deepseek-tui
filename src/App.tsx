@@ -34,6 +34,7 @@ import {
 import { findKeywordPageByPath, keywordPages, type KeywordPage } from './content/keyword-pages'
 import { buildSeoDocument, syncSeoDocument } from './lib/seo'
 import { deriveRouteView, normalizePathname, scrollToHashTarget, type RouteView } from './lib/routing'
+import { initializeAnalytics, syncAnalyticsPage } from './lib/analytics'
 
 const defaultPublicAppOrigin = 'https://deepseek-tui.space'
 
@@ -48,8 +49,8 @@ type CheckoutModalState = {
   checkoutUrl?: string
 }
 
-const ctaPrimary = 'Launch a remote DeepSeek-TUI workspace'
-const ctaSecondary = 'Run DeepSeek-TUI in the browser'
+const ctaPrimary = 'Launch a remote DeepSeek TUI workspace'
+const ctaSecondary = 'Run DeepSeek TUI in the browser'
 const ctaTeam = 'Start a team agent session'
 
 const plans: Array<{
@@ -138,8 +139,8 @@ async function readJsonResponse<T>(response: Response): Promise<T | null> {
   }
 }
 
-async function createCheckoutSession(planId: PlanId, billing: Billing) {
-  const response = await fetch('/api/checkout', {
+async function createCheckoutSession(planId: PlanId, billing: Billing, endpoint = '/api/checkout') {
+  const response = await fetch(endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ planId, billing }),
@@ -208,6 +209,15 @@ function usePathnameSignal() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }, [])
 
+
+  useEffect(() => {
+    initializeAnalytics()
+  }, [])
+
+  useEffect(() => {
+    syncAnalyticsPage(pathname, search)
+  }, [pathname, search])
+
   useEffect(() => {
     const onPop = () => {
       setPathname(window.location.pathname)
@@ -222,7 +232,7 @@ function usePathnameSignal() {
 
 function CheckoutDoneBridge({ publicAppOrigin }: { publicAppOrigin: string }) {
   useEffect(() => {
-    const origin = new URL(publicAppOrigin).origin
+    const origin = window.location.origin || new URL(publicAppOrigin).origin
 
     if (window.parent !== window) {
       window.parent.postMessage({ type: 'deepseek-tui-checkout-complete' }, origin)
@@ -299,9 +309,9 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    const allowed = new URL(publicAppOrigin).origin
+    const allowed = new Set([window.location.origin, new URL(publicAppOrigin).origin])
     const onMessage = (event: MessageEvent) => {
-      if (event.origin !== allowed) return
+      if (!allowed.has(event.origin)) return
       if (event.data?.type === 'deepseek-tui-checkout-complete') {
         setCheckoutModal(null)
         navigate('/?checkout=complete')
@@ -318,7 +328,7 @@ export default function App() {
     }
   }, [pathname])
 
-  const startHostedCheckout = useCallback(async (planId: PlanId, nextBilling: Billing, loadingKey: string) => {
+  const startHostedCheckout = useCallback(async (planId: PlanId, nextBilling: Billing, loadingKey: string, provider = 'creem') => {
     setSelectedPlanId(planId)
     setBilling(nextBilling)
     setCheckoutLoadingKey(loadingKey)
@@ -327,7 +337,7 @@ export default function App() {
     const popup = openCenteredCheckoutWindow()
 
     try {
-      const url = await createCheckoutSession(planId, nextBilling)
+      const url = await createCheckoutSession(planId, nextBilling, provider === 'nowpayments' ? '/api/nowpayments-checkout' : '/api/checkout')
       sendPopupToCheckout(popup, url)
       setCheckoutModal({ planId, billing: nextBilling, loadingKey, status: 'popup', checkoutUrl: url })
     } catch {
@@ -459,17 +469,17 @@ export default function App() {
         {checkoutComplete ? (
           <section className="dst-success-banner">
             <CheckCircle2 size={18} />
-            Payment received. Your DeepSeek-TUI workspace onboarding will start from the email used at checkout.
+            Payment received. Your DeepSeek TUI workspace onboarding will start from the email used at checkout.
           </section>
         ) : null}
 
         <section className="dst-hero" id="top">
           <div className="dst-hero-copy">
-            <p className="dst-eyebrow">DeepSeek V4 coding agent workspace</p>
-            <h1>DeepSeek-TUI in the browser, with the guardrails teams ask for.</h1>
+            <p className="dst-eyebrow">Hosted DeepSeek TUI workspace for DeepSeek-TUI</p>
+            <h1>DeepSeek TUI in the browser, with the guardrails teams ask for.</h1>
             <p className="dst-lede">
-              Launch a remote terminal coding workspace for DeepSeek-TUI: auto model routing, approval modes, session
-              resume, rollback, MCP, audit-ready logs, and a checkout path that keeps Pro annual selected by default.
+              Launch a remote DeepSeek TUI workspace for DeepSeek-TUI: auto model routing, approval modes, session resume,
+              rollback, MCP, audit-ready logs, and a checkout path that keeps Pro annual selected by default.
             </p>
 
             <div className="dst-hero-actions">
@@ -494,7 +504,7 @@ export default function App() {
             </div>
           </div>
 
-          <aside className="dst-terminal-preview" aria-label="DeepSeek-TUI workspace preview">
+          <aside className="dst-terminal-preview" aria-label="DeepSeek TUI workspace preview">
             <div className="dst-terminal-bar">
               <div>
                 <span />
@@ -542,13 +552,14 @@ rollback ref: side-git:7f4a2`}</pre>
             <p className="dst-eyebrow">Workspace first</p>
             <h2>Start with the actual agent surface, not a slide deck.</h2>
             <p>
-              DeepSeek-TUI is a terminal coding agent. The hosted version should feel like opening a ready workspace:
+              DeepSeek TUI is a terminal coding agent. DeepSeek-TUI gives the open-source workflow its project identity, while
+              this hosted version should feel like opening a ready workspace:
               choose the plan, launch the browser terminal, keep approvals visible, and preserve the session record.
             </p>
           </div>
           <div className="dst-screenshot-grid">
             <div className="dst-screenshot-frame">
-              <img src="/deepseek-tui-screenshot.png" alt="DeepSeek-TUI terminal interface preview" />
+              <img src="/deepseek-tui-screenshot.png" alt="DeepSeek TUI terminal interface preview for DeepSeek-TUI" />
             </div>
             <div className="dst-workspace-panel">
               <h3>What happens after checkout</h3>
@@ -740,6 +751,14 @@ rollback ref: side-git:7f4a2`}</pre>
                       ? ctaSecondary
                       : ctaPrimary}
               </button>
+                <button
+                  type="button"
+                  className="dst-btn dst-btn-ghost"
+                  onClick={() => void startHostedCheckout(plan.id, billing, `${loadingKey}-wallet`, 'nowpayments')}
+                  disabled={checkoutLoadingKey !== null}
+                >
+                  {checkoutLoadingKey === `${loadingKey}-wallet` ? 'Opening USDC wallet...' : 'Pay with USDC Wallet'}
+                </button>
               {selectedPlanId === plan.id ? <span className="dst-plan-selected">Selected</span> : null}
             </article>
           )

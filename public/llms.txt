@@ -1,0 +1,21 @@
+# DeepSeek TUI Cloud
+
+Run DeepSeek TUI as a hosted DeepSeek-TUI workspace with DeepSeek V4 routing, approvals, rollback, sessions, MCP, HTTP/SSE, and cost visibility for coding work.
+
+Website: https://deepseek-tui.space/
+Pricing: https://deepseek-tui.space/pricing/
+Checkout: https://deepseek-tui.space/checkout/
+Support: support@aigeamy.com
+Type: Hosted SaaS workflow product
+
+Problem:
+- Teams need a quotable product definition, pricing path, evidence trail, and checkout route.
+
+Solution:
+- DeepSeek TUI Cloud provides a hosted workflow with public pricing, structured evidence, support contact, and report or receipt outputs.
+
+Useful pages:
+- Home: https://deepseek-tui.space/
+- Pricing: https://deepseek-tui.space/pricing/
+- Resources: https://deepseek-tui.space/resources/
+- Sitemap: https://deepseek-tui.space/sitemap.xml

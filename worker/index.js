@@ -111,6 +111,17 @@ async function firstSecretEnv(env, ...keys) {
   return ''
 }
 
+function nowPaymentsCheckoutOptions(requestUrl) {
+  return {
+    plans: planCatalog,
+    defaultPlanId: 'pro',
+    siteName: 'DeepSeek-TUI Cloud',
+    siteKey: 'deepseek-tui',
+    annualDiscountMultiplier: ANNUAL_DISCOUNT_MULTIPLIER,
+    resolveOrigin: () => resolvePublicAppOrigin(requestUrl),
+  }
+}
+
 function normalizeEnvKey(value) {
   return String(value)
     .trim()
@@ -222,7 +233,7 @@ async function handleCheckout(request, env, requestUrl) {
 
   const apiKey = await firstSecretEnv(env, 'API_PROD_KEY', 'CREEM_API_KEY', 'CREEM_KEY')
   if (!apiKey) {
-    return jsonResponse({ ok: false, error: 'Payment is not configured yet.' }, 503)
+    return handleNowPaymentsCheckout(request, env, nowPaymentsCheckoutOptions(requestUrl))
   }
 
   let body
@@ -252,7 +263,8 @@ async function handleCheckout(request, env, requestUrl) {
     })
     const checkoutUrl = extractCheckoutUrl(checkout)
     if (!checkoutUrl) throw new Error('Creem did not return a checkout URL.')
-    return jsonResponse({ ok: true, checkoutUrl })
+    return jsonResponse({ ok: true,
+      paymentProvider: 'hosted', checkoutUrl })
   } catch {
     return jsonResponse({ ok: false, error: 'Secure checkout could not be created yet.' }, 502)
   }
@@ -345,15 +357,7 @@ export async function handleRequest(request, env) {
   const requestUrl = new URL(request.url)
 
   if (requestUrl.pathname === '/api/nowpayments-checkout') {
-    return handleNowPaymentsCheckout(request, env, {
-      plans: planCatalog,
-      defaultPlanId: 'pro',
-      siteName: 'deepseek tui',
-      siteKey: 'deepseek-tui',
-      annualDiscountMultiplier: typeof ANNUAL_DISCOUNT_MULTIPLIER !== 'undefined'
-        ? ANNUAL_DISCOUNT_MULTIPLIER
-        : (typeof annualBillingMultiplier !== 'undefined' ? annualBillingMultiplier : 0.5),
-    })
+    return handleNowPaymentsCheckout(request, env, nowPaymentsCheckoutOptions(requestUrl))
   }
 
   if (requestUrl.pathname === '/api/runtime') return handleRuntime(requestUrl)

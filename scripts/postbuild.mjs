@@ -10,10 +10,10 @@ const distDir = path.join(rootDir, 'dist')
 const sourceIndexPath = path.join(distDir, 'index.html')
 const keywordSourcePath = path.join(rootDir, 'src', 'content', 'keyword-pages.ts')
 const origin = 'https://deepseek-tui.space'
-const siteName = 'DeepSeek-TUI Cloud'
-const defaultTitle = 'DeepSeek-TUI Cloud | Terminal Coding Agent for DeepSeek V4'
+const siteName = 'DeepSeek TUI Cloud'
+const defaultTitle = 'DeepSeek TUI Cloud - Hosted DeepSeek-TUI Workspace for DeepSeek V4'
 const defaultDescription =
-  'Run DeepSeek-TUI as a polished hosted workspace: DeepSeek V4 auto routing, approvals, rollback, sessions, MCP, HTTP/SSE, and cost visibility for serious coding work.'
+  'Run DeepSeek TUI as a hosted DeepSeek-TUI workspace with DeepSeek V4 routing, approvals, rollback, sessions, MCP, HTTP/SSE, and cost visibility for coding work.'
 
 const sourceIndex = await fs.readFile(sourceIndexPath, 'utf8')
 const keywordPages = await loadKeywordPages()
@@ -199,10 +199,10 @@ function buildHomePrerender() {
     <main class="dst-main dst-static-shell">
       <section class="dst-hero" id="top">
         <div>
-          <p class="dst-eyebrow">Hosted terminal coding workspace for DeepSeek-TUI</p>
-          <h1>Run DeepSeek-TUI in a browser-ready workspace.</h1>
-          <p class="dst-lede">Launch a remote terminal coding workspace for DeepSeek-TUI with DeepSeek V4 routing, approval modes, session resume, rollback, MCP, audit-ready logs, and Pro annual selected by default.</p>
-          <p><a class="dst-btn dst-btn-primary" href="#pricing">Launch a remote DeepSeek-TUI workspace</a></p>
+          <p class="dst-eyebrow">Hosted DeepSeek TUI workspace for DeepSeek-TUI</p>
+          <h1>Run DeepSeek TUI in a browser-ready workspace.</h1>
+          <p class="dst-lede">Launch a remote DeepSeek TUI workspace for DeepSeek-TUI with DeepSeek V4 routing, approval modes, session resume, rollback, MCP, audit-ready logs, and Pro annual selected by default.</p>
+          <p><a class="dst-btn dst-btn-primary" href="#pricing">Launch a remote DeepSeek TUI workspace</a></p>
         </div>
       </section>
     </main>`
