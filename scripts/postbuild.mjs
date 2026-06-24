@@ -109,7 +109,7 @@ await writeStaticPage('/terms', {
   canonicalPath: '/terms',
   rootHtml: buildLegalPrerender(
     'Terms',
-    'Plans provide access to hosted workspace onboarding and related support. Payments are processed by Creem and annual billing returns buyers to the homepage after success.',
+    'Plans provide access to hosted workspace onboarding and related support. Payments are processed by Polar and annual billing returns buyers to the homepage after success.',
   ),
   structuredData: [],
 })

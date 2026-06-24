@@ -328,7 +328,7 @@ export default function App() {
     }
   }, [pathname])
 
-  const startHostedCheckout = useCallback(async (planId: PlanId, nextBilling: Billing, loadingKey: string, provider = 'creem') => {
+  const startHostedCheckout = useCallback(async (planId: PlanId, nextBilling: Billing, loadingKey: string, provider = 'polar') => {
     setSelectedPlanId(planId)
     setBilling(nextBilling)
     setCheckoutLoadingKey(loadingKey)
@@ -337,7 +337,7 @@ export default function App() {
     const popup = openCenteredCheckoutWindow()
 
     try {
-      const url = await createCheckoutSession(planId, nextBilling, provider === 'nowpayments' ? '/api/nowpayments-checkout' : '/api/checkout')
+      const url = await createCheckoutSession(planId, nextBilling, provider === 'polar' ? '/api/polar-checkout' : '/api/checkout')
       sendPopupToCheckout(popup, url)
       setCheckoutModal({ planId, billing: nextBilling, loadingKey, status: 'popup', checkoutUrl: url })
     } catch {
@@ -418,29 +418,29 @@ export default function App() {
 
     return (
       <div className="dst-checkout-backdrop" role="presentation">
-        <section className="dst-checkout-modal dst-creem-popup-modal" role="dialog" aria-modal="true" aria-labelledby="checkout-title">
+        <section className="dst-checkout-modal dst-polar-popup-modal" role="dialog" aria-modal="true" aria-labelledby="checkout-title">
           <button type="button" className="dst-checkout-close" aria-label="Close checkout" onClick={() => setCheckoutModal(null)}>
             <X size={18} />
           </button>
           {checkoutUrl ? (
-            <div className="dst-creem-popup-copy">
+            <div className="dst-polar-popup-copy">
               <p className="dst-eyebrow">Secure checkout</p>
-              <h2 id="checkout-title">Creem checkout opened.</h2>
+              <h2 id="checkout-title">Polar checkout opened.</h2>
               <p className="dst-muted">
-                Complete payment in the Creem window. This page stays open and returns to the homepage after success.
+                Complete payment in the Polar window. This page stays open and returns to the homepage after success.
               </p>
               <a className="dst-btn dst-btn-primary" href={checkoutUrl} target="_blank" rel="noreferrer noopener">
-                Reopen Creem checkout
+                Reopen Polar checkout
               </a>
             </div>
           ) : checkoutModal.status === 'loading' ? (
-            <div className="dst-creem-loading" aria-live="polite">
+            <div className="dst-polar-loading" aria-live="polite">
               <span />
-              Opening Creem checkout...
+              Opening Polar checkout...
             </div>
           ) : (
-            <div className="dst-creem-error">
-              <p>Creem checkout could not be opened. Please try again.</p>
+            <div className="dst-polar-error">
+              <p>Polar checkout could not be opened. Please try again.</p>
               <div className="dst-checkout-actions">
                 <button
                   type="button"
@@ -448,7 +448,7 @@ export default function App() {
                   onClick={() => void startHostedCheckout(checkoutModal.planId, checkoutModal.billing, checkoutModal.loadingKey)}
                   disabled={checkoutLoadingKey !== null}
                 >
-                  Open Creem checkout
+                  Open Polar checkout
                 </button>
                 <button type="button" className="dst-btn dst-btn-ghost" onClick={() => setCheckoutModal(null)}>
                   Review plans
@@ -754,7 +754,7 @@ rollback ref: side-git:7f4a2`}</pre>
                 <button
                   type="button"
                   className="dst-btn dst-btn-ghost"
-                  onClick={() => void startHostedCheckout(plan.id, billing, `${loadingKey}-wallet`, 'nowpayments')}
+                  onClick={() => void startHostedCheckout(plan.id, billing, `${loadingKey}-wallet`, 'polar')}
                   disabled={checkoutLoadingKey !== null}
                 >
                   {checkoutLoadingKey === `${loadingKey}-wallet` ? 'Opening USDC wallet...' : 'Pay with USDC Wallet'}
@@ -843,7 +843,7 @@ rollback ref: side-git:7f4a2`}</pre>
         </p>
         <section>
           <h2>What we process</h2>
-          <p>We process account contact details, payment metadata from Creem, workspace onboarding information, support messages, and limited operational analytics.</p>
+          <p>We process account contact details, payment metadata from Polar, workspace onboarding information, support messages, and limited operational analytics.</p>
           <h2>Credentials</h2>
           <p>Never paste private keys or model credentials into support messages. Workspace setup should use scoped, revocable secrets and least-privilege access.</p>
           <h2>Retention</h2>
@@ -866,7 +866,7 @@ rollback ref: side-git:7f4a2`}</pre>
           <h2>Service</h2>
           <p>Plans provide access to hosted workspace onboarding and related support. The open-source DeepSeek-TUI project remains independently maintained by its authors.</p>
           <h2>Payments</h2>
-          <p>Payments are processed by Creem. Annual billing is discounted as shown at checkout and returns to the homepage after successful payment.</p>
+          <p>Payments are processed by Polar. Annual billing is discounted as shown at checkout and returns to the homepage after successful payment.</p>
           <h2>Acceptable use</h2>
           <p>Do not use the service to access systems you do not control, bypass security policies, exfiltrate secrets, or run harmful automation.</p>
         </section>
