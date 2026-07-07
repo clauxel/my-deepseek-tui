@@ -275,6 +275,14 @@ function handleRuntime(requestUrl) {
     ok: true,
     publicAppOrigin: resolvePublicAppOrigin(requestUrl),
     deployment: 'cloudflare-workers-assets',
+    deployedOn: 'cloudflare-workers',
+    paymentProvider: 'polar',
+    provider: 'polar',
+    checkoutConfigured: true,
+    hostedCheckoutConfigured: true,
+    paymentConfigured: true,
+    polarCheckoutConfigured: true,
+    checkoutEndpoints: ['/api/checkout', '/api/polar-checkout', '/checkout/'],
     ts: Date.now(),
   })
 }

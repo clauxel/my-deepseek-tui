@@ -49,9 +49,9 @@ type CheckoutModalState = {
   checkoutUrl?: string
 }
 
-const ctaPrimary = 'Launch a remote DeepSeek TUI workspace'
-const ctaSecondary = 'Run DeepSeek TUI in the browser'
-const ctaTeam = 'Start a team agent session'
+const ctaPrimary = 'Checkout Pro annual'
+const ctaSecondary = 'Checkout Starter annual'
+const ctaTeam = 'Checkout Team annual'
 
 const plans: Array<{
   id: PlanId
@@ -739,6 +739,10 @@ rollback ref: side-git:7f4a2`}</pre>
               <button
                 type="button"
                 className={plan.popular ? 'dst-btn dst-btn-primary' : 'dst-btn dst-btn-ghost'}
+                data-billing={billing}
+                data-checkout
+                data-plan-id={plan.id}
+                data-polar-checkout
                 onClick={() => void startHostedCheckout(plan.id, billing, loadingKey)}
                 onMouseEnter={() => setSelectedPlanId(plan.id)}
                 disabled={checkoutLoadingKey !== null}
